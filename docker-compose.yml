@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  couchbase:
+    container_name: todo-app-couchbase
+    image: couchbase:latest
+    ports:
+      - "8091-8096:8091-8096" # UI ports
+      - "11210-11211:11210-11211" # Engine ports
+    environment:
+      COUCHBASE_ADMINISTRATOR_USERNAME: Administrator
+      COUCHBASE_ADMINISTRATOR_PASSWORD: 123456
+    volumes:
+      - couchbase_data:/opt/couchbase/var
+      - couchbase_config:/opt/couchbase/etc
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8091/ui/index.html"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  auth_service:
+    container_name: AuthService
+    build: ./AuthService
+    ports:
+      - "4000:4000"
+    environment:
+      - APP_PORT=4000
+      - DB_CONN_STRING=couchbase://couchbase
+      - DB_ADMINISTRATOR_USERNAME=Administrator
+      - DB_ADMINISTRATOR_PASSWORD=123456
+    depends_on:
+      couchbase:
+        condition: service_healthy
+
+  gateway_service:
+    container_name: GatewayService
+    build: ./GatewayService
+    ports:
+      - '3000:3000'
+    environment:
+      - APP_PORT=3000
+    depends_on:
+      - auth_service
+
+  todo_service:
+    build: ./TodoService
+    ports:
+      - '5000:5000'
+    environment:
+      - APP_PORT=5000
+      - DB_CONN_STRING=couchbase://couchbase
+      - DB_ADMINISTRATOR_USERNAME=Administrator
+      - DB_ADMINISTRATOR_PASSWORD=123456
+    depends_on:
+      - couchbase
+
+volumes:
+  couchbase_data:
+  couchbase_config:
