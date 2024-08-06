@@ -9,7 +9,7 @@ app.use(urlencoded({ extended: false }))
 app.use(json())
 
 
-app.use('/api', router)
+app.use('/', router)
 
 app.use(globalErrorMiddleware)
 

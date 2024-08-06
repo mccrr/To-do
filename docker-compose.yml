@@ -50,6 +50,7 @@ services:
       - auth_service
 
   todo_service:
+    container_name: TodoService
     build: ./TodoService
     ports:
       - '5000:5000'
